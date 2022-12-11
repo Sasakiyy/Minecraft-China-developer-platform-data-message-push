@@ -1,0 +1,56 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <time.h>
+#include <curl/curl.h>
+#include <telegram.h>
+
+// 网址
+const std::string URL = "https://mcdev.webapp.163.com/#/square";
+// Telegram Bot 的 API 密钥
+const std::string API_KEY = "YOUR_API_KEY";
+// Telegram Bot 接收消息的 chat_id
+const std::string CHAT_ID = "YOUR_CHAT_ID";
+
+int main() {
+  // 设置登录时间
+  time_t login_time = 11;
+
+  // 每天 11 点钟自动登录网址
+  while (true) {
+    time_t now = time(nullptr);
+    struct tm *local_time = localtime(&now);
+
+    if (local_time->tm_hour == login_time) {
+      // 初始化 curl
+      CURL *curl = curl_easy_init();
+
+      // 设置登录信息
+      curl_easy_setopt(curl, CURLOPT_URL, URL.c_str());
+      curl_easy_setopt(curl, CURLOPT_USERNAME, "USERNAME");
+      curl_easy_setopt(curl, CURLOPT_PASSWORD, "PASSWORD");
+
+      // 执行登录操作
+      CURLcode res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+        return 1;
+      }
+
+      // 清除 curl
+      curl_easy_cleanup(curl);
+
+      // 获取网页内容
+      std::string content = get_page_content(URL);
+
+      // 从网页中提取包含数字的信息
+      std::string message = extract_number_info(content);
+
+      // 使用 Telegram 机器人发送消息
+      telegram::Bot bot(API_KEY);
+      bot.send_message(CHAT_ID, message);
+    }
+  }
+
+  return 0;
+}
